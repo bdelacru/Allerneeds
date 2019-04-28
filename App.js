@@ -1,18 +1,14 @@
 // install the following to use checkbox
-// npm install react-native-checkbox-form --save
-        //https://reactnativeexample.com/a-simple-checkboxs-component-works-on-android-and-ios/
 //npm install --save react-native-elements
        // https://react-native-training.github.io/react-native-elements/docs/getting_started.html
 import React from 'react';
-import { StyleSheet, Text, View,TouchableOpacity,Image, Button} from 'react-native';
-import CheckBoxItem from './CheckBoxItem'
+import { StyleSheet, Text, View,TouchableOpacity,AsyncStorage,Image,ScrollView,FlatList} from 'react-native';
+//import CheckBoxItem from './CheckBoxItem'
 import { createStackNavigator, createAppContainer } from 'react-navigation';
 import { Constants } from 'expo';
 import { BarCodeScanner, Permissions } from 'expo';
-import { ListItem, CheckBox } from 'react-native-elements';
-import CheckboxFormX from 'react-native-checkbox-form';
 import EdamamApi from './Chomp_API';
-
+import { CheckBox, Button } from 'react-native-elements';
 class HomeScreen extends React.Component {
     render() {
         return (
@@ -163,65 +159,111 @@ class HisScreen extends React.Component {
 }
  
 class SettingsScreen extends React.Component {
-  
-  
-  state = {
-    response: [
-      {
-        name:'Milk',
-        key: '1'
-      },
-            {
-        name:'Gluten',
-        key: '2'
-      },
-            {
-        name:'Nuts',
-        key: '3'
-      },
-      {
-        name:'Soybeans',
-        key: '4'
-      },
-            {
-        name:'Treenuts',
-        key: '5'
-      },
-            {
-        name:'Peach',
-        key: '6'
-      },
-    ],
-    selectedBoxes: [] 
+  constructor() {
+    super();
+    this.state={
+   data: [
+   {
+    "name": 'Allergy1',
+   },
+   {
+    "name": 'Allergy2',
+   },
+   {
+    "name": 'Allergy3',
+   },
+   {
+    "name": 'Allergy4',
+   },
+   {
+    "name": 'Allergy5',
+   },
+   {
+    "name": 'Allergy6',
+   },
+   {
+    "name": 'Allergy7',
+   },
+   {
+    "name": 'Allergy8',
+   },
+   {
+    "name": 'Allergy9',
+   },
+
+   ],
+   checked: [],
+   
+      
+    }
   }
+  componentDidMount() {
+  let { data, checked } = this.state;
+  let intialCheck = data.map(x => false);
+  this.setState({ checked: intialCheck })
+}
+handleChange = (index) => {
+  let checked = [...this.state.checked];
+  checked[index] = !checked[index];
+  this.setState({ checked });
+  console.log(checked);
+  AsyncStorage.setItem("myCheckBox", JSON.stringify(checked));
+}
 
-  onUpdate = (name) => {
-    
-    this.setState(previous => {
-      let selectedBoxes = previous.selectedBoxes;
-      let index = selectedBoxes.indexOf(name) 
-      if (index === -1) {
-        selectedBoxes.push(name) 
-      } else {
-        selectedBoxes.splice(index, 1) 
-      }
-      return { selectedBoxes }; 
-    }, () => console.log(this.state.selectedBoxes));
+saveData(){
+
+}
+displayData = async () => {
+  try{
+    let data1 = await AsyncStorage.getItem("myCheckBox");
+    let parsed = JSON.parse(data1);
+    alert(parsed.name);
   }
-
-  render() {
-    const { response } = this.state;
-    return (
-      <View style={styles.container}>
-
-        {
-          response.map(item => <CheckBoxItem label={item.name} onUpdate={this.onUpdate.bind(this,item.name)}/>)
-        }
-      </View>
-    );
+  catch(error){
+    alert(error);
   }
 }
- 
+checkItem = (item) => {
+    const { checked } = this.state;
+    let newArr = [];
+
+    if (!checked.includes(item)) {
+        newArr = [...checked, item];
+    } else {
+      newArr = checked.filter(a => a !== item);
+    }
+    this.setState({ checked: newArr }, () => console.log('updated state', newArr))
+};
+combined(){
+  handleChange(index)
+  checkItem(item.name)
+}
+render() {
+  let { data, checked } = this.state;
+  return (
+  <View>
+    <FlatList
+      data={data}
+      extraData={this.state}
+      renderItem={({ item, index }) =>
+        <CheckBox
+          
+          title={item.name}
+          onPress={() => this.handleChange(index) }
+            onChange={() => this.checkItem(item.userid)}
+          checked={checked[index]} />
+      }
+  
+    />
+  <Button
+    title="Save"
+    
+    />
+</View>
+
+  );
+}
+ }
 class FavScreen extends React.Component {
     render() {
         return (
@@ -268,6 +310,15 @@ const styles = StyleSheet.create({
     backgroundColor: 'lightblue',
     alignItems: 'center',
     justifyContent: 'center',
+    },
+
+    test: {
+    flex: 1,
+    justifyContent: 'center',
+    paddingTop: Constants.statusBarHeight,
+    backgroundColor: '#ecf0f1',
+    padding: 8,
+
     },
  
     titletext: {
