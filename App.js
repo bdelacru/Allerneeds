@@ -40,39 +40,48 @@ class ResultsPage extends React.Component {
       this.state = {
         upcValue: null,
         allergens: [],
+        allergenStr: "",
         error: null,
-        userAllergens: 'en:nuts',
+        status1: "",
+        status2: "",
         img: null,
         name: null,
         params: this.props.navigation.state.params.info,
         allerParams: this.props.navigation.state.params.allergenOptions,
         
     };
-    //console.log(this.props.navigation.state.params.info)
    }
     componentDidMount() { //will end up being componentWillMount (?)
-     //let upc = this.state.params
-     //let upc = '0038000359217' 
+
      var upc = this.state.params
-     //console.log(this.state.params)
      this.setState({upcValue: upc });
      EdamamApi.fetchData(upc).then( (allergenList) => { 
       this.setState( {
         allergens: allergenList.labels,
-      img: allergenList.img, 
+        img: allergenList.img, 
         name: allergenList.name
       });
    });
-  };
-displayData= async() => {
-  try{
-    let data1 = await AsyncStorage.getItem("myCheckBox");
-    let parsed = JSON.parse(data1);
-    alert(parsed);    
-  }
-  catch(error){
-    alert(error);
-  }
+}
+  
+    displayData= async() => {
+    try{
+        let data1 = await AsyncStorage.getItem("myCheckBox");
+        let parsed = JSON.parse(data1).toString().toUpperCase().split(","); // what is allergic to, string
+        let temp = this.state.allergens.toString().split("en:").join(" ").toUpperCase(); //what is in food, array
+        console.log(temp)
+        for (index = 0; index < parsed.length; index++){
+            if (temp.includes(parsed[index])){
+                this.setState({
+                    status1: "Allergen Match Found",
+                    status2: "WARNING: DO NOT CONSUME"
+                });
+        };
+        }
+    }
+    catch(error){
+        alert(error);
+    }
 }
 
   //componenetDidMount(){
@@ -80,22 +89,16 @@ displayData= async() => {
       //console.log(this.props.params)
   //}
 
-   
-    render() {
+    render() { 
+
       return (
         <View style = { styles.container }> 
+          <Text style={ styles.favtext }> { this.state.status1 } </Text>
+          <Text style={ styles.favtext }> { this.state.status2 } </Text>
           <Text>UPC Code: { this.state.upcValue }</Text>
           <Text style = { styles.favtext}>{ this.state.name } </Text>
-
-          <Text>Allergens Found: SOYBEANS, MILK, WHEAT </Text>
-          <Button
-    title="GetList" onPress ={() => this.displayData()}
-    
-    
-    />
-    <Text> allerArr is  </Text>
-  
-
+          <Text>Allergens Found: { this.state.allergens.toString().split("en:").join(' ') }</Text>
+          <Button title="Generate Allergy Results" onPress ={() => this.displayData()}/>
         </View>
       )
     };
@@ -186,7 +189,7 @@ class SettingsScreen extends React.Component {
     "name": 'Eggs',
    },
    {
-    "name": 'Soy',
+    "name": 'Soybeans',
    },
   {
     "name": 'Peanuts',
@@ -242,14 +245,14 @@ checkItem = (item) => {
    
     }
     this.setState({ checked: newArr })
-    console.log('update allergens list: ',allerArr)
+    //console.log('update allergens list: ',allerArr)
 };
 
 saveData= async (val) => {
  try{
    const arrayString = JSON.stringify(val)
     AsyncStorage.setItem("myCheckBox", arrayString);
-    console.log("Item saved!");
+    //console.log("Item saved!");
  
 
  }catch(error){
