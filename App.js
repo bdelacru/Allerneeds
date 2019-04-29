@@ -1,14 +1,11 @@
-// install the following to use checkbox
-//npm install --save react-native-elements
-       // https://react-native-training.github.io/react-native-elements/docs/getting_started.html
 import React from 'react';
 import { StyleSheet, Text, View,TouchableOpacity,AsyncStorage,Image,ScrollView,FlatList} from 'react-native';
-//import CheckBoxItem from './CheckBoxItem'
 import { createStackNavigator, createAppContainer } from 'react-navigation';
 import { Constants } from 'expo';
 import { BarCodeScanner, Permissions } from 'expo';
 import EdamamApi from './Chomp_API';
 import { CheckBox, Button } from 'react-native-elements';
+
 class HomeScreen extends React.Component {
     render() {
         return (
@@ -48,6 +45,8 @@ class ResultsPage extends React.Component {
         img: null,
         name: null,
         params: this.props.navigation.state.params.info,
+        allerParams: this.props.navigation.state.params.allergenOptions,
+        
     };
     //console.log(this.props.navigation.state.params.info)
    }
@@ -65,6 +64,16 @@ class ResultsPage extends React.Component {
       });
    });
   };
+displayData= async() => {
+  try{
+    let data1 = await AsyncStorage.getItem("myCheckBox");
+    let parsed = JSON.parse(data1);
+    alert(parsed);    
+  }
+  catch(error){
+    alert(error);
+  }
+}
 
   //componenetDidMount(){
     //  this.getResults(this.props.params);
@@ -77,10 +86,16 @@ class ResultsPage extends React.Component {
         <View style = { styles.container }> 
           <Text>UPC Code: { this.state.upcValue }</Text>
           <Text style = { styles.favtext}>{ this.state.name } </Text>
-          <Image 
-            source = {{ uri: 'https://static.openfoodfacts.org/images/products/003/800/035/9217/front_fr.11.400.jpg' }} 
-            style = {{ height: 300, width: 500 }} />
+
           <Text>Allergens Found: SOYBEANS, MILK, WHEAT </Text>
+          <Button
+    title="GetList" onPress ={() => this.displayData()}
+    
+    
+    />
+    <Text> allerArr is  </Text>
+  
+
         </View>
       )
     };
@@ -159,106 +174,129 @@ class HisScreen extends React.Component {
 }
  
 class SettingsScreen extends React.Component {
+
   constructor() {
     super();
     this.state={
    data: [
    {
-    "name": 'Allergy1',
+    "name": 'Milk',
    },
    {
-    "name": 'Allergy2',
+    "name": 'Eggs',
    },
    {
-    "name": 'Allergy3',
+    "name": 'Soy',
+   },
+  {
+    "name": 'Peanuts',
    },
    {
-    "name": 'Allergy4',
+    "name": 'Tree nuts',
+   },
+  {
+    "name": 'Gluten',
    },
    {
-    "name": 'Allergy5',
+    "name": 'Wheat',
    },
-   {
-    "name": 'Allergy6',
-   },
-   {
-    "name": 'Allergy7',
-   },
-   {
-    "name": 'Allergy8',
-   },
-   {
-    "name": 'Allergy9',
-   },
+
+
 
    ],
    checked: [],
-   
+   allerArr: [],
+   storedValue:'',
       
     }
+
   }
   componentDidMount() {
-  let { data, checked } = this.state;
-  let intialCheck = data.map(x => false);
+  let intialCheck = this.state.data.map(x => false);
   this.setState({ checked: intialCheck })
-}
-handleChange = (index) => {
-  let checked = [...this.state.checked];
-  checked[index] = !checked[index];
-  this.setState({ checked });
-  console.log(checked);
-  AsyncStorage.setItem("myCheckBox", JSON.stringify(checked));
+  
 }
 
-saveData(){
+checkItem = (item) => {
+    const { checked } = this.state;
+    const { allerArr } = this.state;
 
-}
-displayData = async () => {
+    let newArr = [];
+    let tmp = this.state.allerArr;
+    let index;
+
+    if (!checked.includes(item)) {
+        newArr = [...checked, item];
+       
+        tmp.push(item);
+        this.setState({allerArr:tmp});
+           
+    } else {
+      newArr = checked.filter(a => a !== item);
+   
+    index = tmp.indexOf(item);
+    if (index>-1){
+        tmp.splice(index, 1);
+        this.setState({ allerArr: tmp })
+    }
+   
+    }
+    this.setState({ checked: newArr })
+    console.log('update allergens list: ',allerArr)
+};
+
+saveData= async (val) => {
+ try{
+   const arrayString = JSON.stringify(val)
+    AsyncStorage.setItem("myCheckBox", arrayString);
+    console.log("Item saved!");
+ 
+
+ }catch(error){
+  alert(error);
+ }
+
+};
+displayData= async() => {
   try{
     let data1 = await AsyncStorage.getItem("myCheckBox");
     let parsed = JSON.parse(data1);
-    alert(parsed.name);
+    alert(parsed);
   }
   catch(error){
     alert(error);
   }
 }
-checkItem = (item) => {
-    const { checked } = this.state;
-    let newArr = [];
 
-    if (!checked.includes(item)) {
-        newArr = [...checked, item];
-    } else {
-      newArr = checked.filter(a => a !== item);
-    }
-    this.setState({ checked: newArr }, () => console.log('updated state', newArr))
-};
-combined(){
-  handleChange(index)
-  checkItem(item.name)
-}
+
 render() {
-  let { data, checked } = this.state;
+  let { checked } = this.state;
+
   return (
   <View>
-    <FlatList
-      data={data}
+      <FlatList
+      data={this.state.data}
       extraData={this.state}
-      renderItem={({ item, index }) =>
-        <CheckBox
-          
+      renderItem={({ item }) =>
+        <CheckBox        
           title={item.name}
-          onPress={() => this.handleChange(index) }
-            onChange={() => this.checkItem(item.userid)}
-          checked={checked[index]} />
+          onPress={() => this.checkItem(item.name)}
+          checked={this.state.checked.includes(item.name)}/>
       }
   
     />
   <Button
-    title="Save"
+    title="Save" onPress ={() => this.saveData(this.state.allerArr)}
+    
     
     />
+      <Button
+    title="View" onPress ={() => this.displayData()}
+    
+    
+    />
+    <Text> allerArr is {JSON.stringify(this.state.allerArr)} </Text>
+
 </View>
 
   );
