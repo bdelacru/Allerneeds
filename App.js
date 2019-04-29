@@ -152,8 +152,10 @@ class ScanScreen extends React.Component {
  
     }
     handleBarCodeScanned = ({ data }) => {
+
        this.setState({ barcodeData: data });
-       this.props.navigation.navigate('Result', { info: this.state.barcodeData})
+      
+       setTimeout(() => this.props.navigation.navigate('Result', { info: this.state.barcodeData}),20);
     };
 }
 
@@ -209,7 +211,7 @@ class SettingsScreen extends React.Component {
    ],
    checked: [],
    allerArr: [],
-   storedValue:'',
+   
       
     }
 
@@ -245,7 +247,7 @@ checkItem = (item) => {
    
     }
     this.setState({ checked: newArr })
-    //console.log('update allergens list: ',allerArr)
+    
 };
 
 saveData= async (val) => {
@@ -260,16 +262,6 @@ saveData= async (val) => {
  }
 
 };
-displayData= async() => {
-  try{
-    let data1 = await AsyncStorage.getItem("myCheckBox");
-    let parsed = JSON.parse(data1);
-    alert(parsed);
-  }
-  catch(error){
-    alert(error);
-  }
-}
 
 
 render() {
