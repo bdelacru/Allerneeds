@@ -10,25 +10,22 @@ class HomeScreen extends React.Component {
     render() {
         return (
             <View style={styles.container}>
-                <Text style={styles.titletext}>  Home Screen </Text>
-                <TouchableOpacity
-                    style={styles.fav}
-                    onPress={() => this.props.navigation.navigate('Favorites')}
-                >
-                    <Text style={styles.favtext}>  Favorites </Text>
-                </TouchableOpacity>
-                <TouchableOpacity  onPress={() => this.props.navigation.navigate('Scanner')}
+                <Image style={{ width: 400, height: 240, position: 'absolute', top: 0, left:10 }}
+                   source={require('./allerneeds.jpg')} />
+                <Text style={{ fontSize: 20, position: 'absolute', top: 225, left: 55 }}>  Touch Button to Scan Good! </Text>
+                <TouchableOpacity onPress={() => this.props.navigation.navigate('Scanner')}
                     style={styles.scanner}>
                     <Text style={styles.scannertext}>  Scanner </Text>
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => this.props.navigation.navigate('History')}
                     style={styles.history}>
-                    <Text style={styles.historytext}>  History </Text>
-                   </TouchableOpacity >
-                       <TouchableOpacity  onPress={() => this.props.navigation.navigate('Settings')}
+                    <Text style={styles.historytext}>  Terms and Agreements </Text>
+                </TouchableOpacity >
+                <Text style={{ fontSize: 20, position: 'absolute', top: 350, left: 55 }}>  Touch Button to Set Allergens! </Text>
+                <TouchableOpacity onPress={() => this.props.navigation.navigate('Settings')}
                     style={styles.settings}>
                     <Text style={styles.settingstext}>  Allergens </Text>
-                    </TouchableOpacity >
+                </TouchableOpacity >
             </View>
         );
     }
@@ -44,6 +41,7 @@ class ResultsPage extends React.Component {
         error: null,
         status1: "",
         status2: "",
+        found: false,
         img: null,
         name: null,
         params: this.props.navigation.state.params.info,
@@ -73,11 +71,18 @@ class ResultsPage extends React.Component {
         for (index = 0; index < parsed.length; index++){
             if (temp.includes(parsed[index])){
                 this.setState({
-                    status1: "Allergen Match Found",
-                    status2: "WARNING: DO NOT CONSUME"
+                    status1: "Match Found",
+                    status2: "WARNING: DO NOT CONSUME",
+                    found: true,
                 });
         };
-        }
+    }
+    if (this.state.found === false){
+        this.setState({
+            status1: "Safe to Consume",
+            status2: "Enjoy!"
+        });
+    }
     }
     catch(error){
         alert(error);
@@ -92,13 +97,26 @@ class ResultsPage extends React.Component {
     render() { 
 
       return (
-        <View style = { styles.container }> 
-          <Text style={ styles.favtext }> { this.state.status1 } </Text>
-          <Text style={ styles.favtext }> { this.state.status2 } </Text>
-          <Text>UPC Code: { this.state.upcValue }</Text>
-          <Text style = { styles.favtext}>{ this.state.name } </Text>
-          <Text>Allergens Found: { this.state.allergens.toString().split("en:").join(' ') }</Text>
-          <Button title="Generate Allergy Results" onPress ={() => this.displayData()}/>
+        <View style = {{ 
+            flex: 1,
+            flexDirection: 'column',
+            justifyContent: 'center',}} 
+        > 
+            <View style = {{flex: 0.8, borderColor: 'lightgrey', borderWidth: 5, margin: 10, alignItems: 'center', paddingTop: 20}}>
+                <Text style={[this.state.found === true ? styles.allergenWarning : styles.allergenSafe ]}> { this.state.status1 } </Text>
+                <Text style={ [this.state.found === true ? styles.allergenWarning2 : styles.allergenSafe2 ]}> { this.state.status2 } </Text>
+            </View>
+            <View style = {{flex: 0.8, borderColor: 'lightgrey', borderWidth: 5, margin: 10, paddingTop: 20, paddingLeft: 10}}>
+                <Text style = { styles.prodtext }>Product Found: </Text>
+                <Text style = { styles.favtext }>{ this.state.name } </Text>
+                <Text>UPC Code: { this.state.upcValue }</Text>
+            </View>
+            <View style = {{flex: 0.8, backgroundColor: 'lightgrey', margin: 10, paddingTop: 10, paddingLeft: 10}}>
+                <Text style = { styles.prodtext }>Allergens Found: { this.state.allergens.toString().split("en:").join(' ') }</Text>
+            </View>
+            <View style = {{flex: 0.8, margin: 20}}>
+                <Button title="Generate Allergy Results" onPress ={() => this.displayData()}/>
+            </View>
         </View>
       )
     };
@@ -152,10 +170,8 @@ class ScanScreen extends React.Component {
  
     }
     handleBarCodeScanned = ({ data }) => {
-
        this.setState({ barcodeData: data });
-      
-       setTimeout(() => this.props.navigation.navigate('Result', { info: this.state.barcodeData}),20);
+       setTimeout(() => this.props.navigation.navigate('Result', { info: this.state.barcodeData}))
     };
 }
 
@@ -211,7 +227,7 @@ class SettingsScreen extends React.Component {
    ],
    checked: [],
    allerArr: [],
-   
+   storedValue:'',
       
     }
 
@@ -247,7 +263,7 @@ checkItem = (item) => {
    
     }
     this.setState({ checked: newArr })
-    
+    //console.log('update allergens list: ',allerArr)
 };
 
 saveData= async (val) => {
@@ -262,6 +278,16 @@ saveData= async (val) => {
  }
 
 };
+displayData= async() => {
+  try{
+    let data1 = await AsyncStorage.getItem("myCheckBox");
+    let parsed = JSON.parse(data1);
+    alert(parsed);
+  }
+  catch(error){
+    alert(error);
+  }
+}
 
 
 render() {
@@ -270,6 +296,7 @@ render() {
   return (
   <View>
       <FlatList
+      style={styles.allergenlist}
       data={this.state.data}
       extraData={this.state}
       renderItem={({ item }) =>
@@ -281,16 +308,7 @@ render() {
   
     />
   <Button
-    title="Save" onPress ={() => this.saveData(this.state.allerArr)}
-    
-    
-    />
-      <Button
-    title="View" onPress ={() => this.displayData()}
-    
-    
-    />
-    <Text> allerArr is {JSON.stringify(this.state.allerArr)} </Text>
+    title="Save" onPress ={() => this.saveData(this.state.allerArr)} style={styles.allergenButton}/>
 
 </View>
 
@@ -338,24 +356,40 @@ export default class App extends React.Component {
  
  
 const styles = StyleSheet.create({
+    allergenWarning: {
+        fontSize: 50,
+        color: 'red',
+        flexWrap: 'wrap',
+    },
+    allergenSafe: {
+        fontSize: 50,
+        color: 'green',
+        flexWrap: 'wrap',
+    },
+    allergenWarning2: {
+        fontSize: 22,
+        color: 'red',
+        flexWrap: 'wrap',
+    },
+    allergenSafe2: {
+        fontSize: 22,
+        color: 'green',
+        flexWrap: 'wrap',
+    },
     container: {
-    flex: 1,
-    backgroundColor: 'lightblue',
-    alignItems: 'center',
-    justifyContent: 'center',
+        flex: 1,
+        backgroundColor: 'white',
+        alignItems: 'center',
+        justifyContent: 'center',
     },
-
     test: {
-    flex: 1,
-    justifyContent: 'center',
-    paddingTop: Constants.statusBarHeight,
-    backgroundColor: '#ecf0f1',
-    padding: 8,
-
+        flex: 1,
+        justifyContent: 'center',
+        paddingTop: Constants.statusBarHeight,
+        backgroundColor: '#ecf0f1',
+        padding: 8,
     },
- 
     titletext: {
-       
         alignItems: 'center',
         justifyContent: 'center',
         fontSize: 30,
@@ -365,12 +399,9 @@ const styles = StyleSheet.create({
     },
     favtitle:
     {
-        alignItems: 'center',
-        justifyContent: 'center',
+        textAlign: 'center',
         fontSize: 30,
         position: 'absolute',
-        top: 30,
-        left: 65,
     },
     historytitle:
     {
@@ -390,14 +421,15 @@ const styles = StyleSheet.create({
         top: 30,
         left: 90,
     },
+    prodtext: {
+        fontSize: 20
+    },
     favtext:
     {
-        //verticalalign: 'texttop',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontSize: 30,
+        //vrticalalign: 'texttop',
+        fontSize: 50,
+        flexWrap: 'wrap',
     },
- 
     scannertext:
     {
         //verticalalign: 'texttop',
@@ -405,7 +437,6 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         fontSize: 30,
     },
- 
     historytext:
     {
         //verticalalign: 'texttop',
@@ -413,10 +444,9 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         fontSize: 30,
     },
- 
     settingstext:
     {
-        //verticalalign: 'texttop',
+        //verticlalign: 'texttop',
         alignItems: 'center',
         justifyContent: 'center',
         fontSize: 30,
@@ -432,38 +462,56 @@ const styles = StyleSheet.create({
     },
     scanner:
     {
-        backgroundColor: "#ff3333",
+        backgroundColor: "#DCDCDC",
         alignItems: 'center',
         padding: 15,
         position: 'absolute',
-        top: 250,
-        left: 80,
+        top: 260,
+        left: 112,
+        borderColor: "black",
+        borderRadius: 25,
     },
     history:
     {
-        backgroundColor: "#99ff99",
-        alignItems: 'center',
-        padding: 15,
-        position: 'absolute',
-        bottom: 150,
-        left: 80,
-    },
-    settings:
-    {
-        backgroundColor: "#a6a6a6",
+        backgroundColor: "#DCDCDC",
         alignItems: 'center',
         padding: 15,
         position: 'absolute',
         bottom: 40,
-        left: 80,
+        left: 15,
+        borderColor: "black",
+        borderRadius: 25,
+    },
+    settings:
+    {
+        backgroundColor: "#DCDCDC",
+        alignItems: 'center',
+        padding: 15,
+        position: 'absolute',
+        bottom: 280,
+        left: 105,
+        borderColor: "#000000",
+        borderRadius: 25,
     },
     home:
     {
-        backgroundColor: "white",
+        backgroundColor: "#DCDCDC",
         alignItems: 'center',
         padding: 15,
         position: 'absolute',
         bottom: 40,
         left: 155,
-    }
+        borderRadius: 25,
+    },
+    resultbutton:
+    {
+        backgroundColor: "#DCDCDC",
+        alignItems: 'center',
+        padding: 15,
+        position: 'absolute',
+        borderRadius: 25,
+    }, 
+    allergenlist: {
+        margin: 10, 
+    }, 
 });
